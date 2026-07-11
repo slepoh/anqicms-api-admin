@@ -1,4 +1,4 @@
-# 内容管理后台（CMS Admin）
+# 安企CMS内容管理API后台（CMS Admin）
 
 一个用于管理内容文档的后台管理系统，基于 **React + Vite + TypeScript** 构建，可一键部署到 **Cloudflare Pages**。
 
