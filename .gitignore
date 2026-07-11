@@ -7,4 +7,6 @@ dist
 !.env.example
 *.zip
 mock-server.mjs
+mock-srv.mjs
+push-via-api.mjs
 .workbuddy/

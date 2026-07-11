@@ -29,11 +29,18 @@ export default function Login() {
         setError('校验失败：Token 错误或接口未返回有效数据（code 非 0）。');
       }
     } catch (err) {
-      setError(
-        '连接失败：' +
-          (err instanceof Error ? err.message : String(err)) +
-          '。请确认域名正确且接口已开启 CORS。',
-      );
+      const msg = err instanceof Error ? err.message : String(err);
+      let tip = '';
+      if (msg.includes('无法连接接口域名') || msg.includes('proxy_failed')) {
+        tip = '请确认域名填写正确（含 http:// 或 https://）、服务可访问，且后端接口正常。';
+      } else if (msg.includes('网络请求失败')) {
+        tip = '无法连接到本站点，请刷新页面后重试。';
+      } else if (/40[13]/.test(msg) || msg.includes('401') || msg.includes('403')) {
+        tip = '可能是 Token 无效或域名对应账号无权限，请检查 Token。';
+      } else {
+        tip = '请确认域名正确、服务可访问。';
+      }
+      setError(msg + ' ' + tip);
     } finally {
       setChecking(false);
     }
@@ -75,8 +82,9 @@ export default function Login() {
         </form>
 
         <div className="hint" style={{ marginTop: 14, lineHeight: 1.7 }}>
-          登录时会用「域名 + Token」调用 <code>/api/import/categories</code> 校验有效性，
-          校验通过即视为登录成功。域名与 Token 仅保存在本浏览器，不会上传到任何第三方。
+          登录时会通过同源代理调用 <code>/api/import/categories</code> 校验有效性，
+          校验通过即视为登录成功。由于请求经本站代理转发，<b>无需后端开启 CORS</b>。
+          域名与 Token 仅保存在本浏览器，不会上传到任何第三方。
         </div>
       </div>
     </div>

@@ -63,13 +63,25 @@ npm run preview    # 预览构建产物
 
 更新已存在文档：保持相同 `title` 或 `id`，并将 `cover` 设为 `1`。
 
+## 同源代理（已内置，无需后端开 CORS）
+
+本后台已内置 **Cloudflare Pages Functions 同源代理**：浏览器只请求本站下的 `/api-proxy/*`，
+由 `functions/api-proxy/[...path].js` 在服务端把请求转发到你在登录时填写的接口域名。
+因为浏览器全程只与本站同源通信，**后端接口无需开启 CORS**，彻底规避登录/调用时的
+`Failed to fetch`（跨域拦截）问题。
+
+- 目标域名与 Token 通过请求头 `x-target-domain` / `x-api-token` 传给代理；代理在服务端注入 `?token=` 后转发。
+- 本地 `npm run dev` / `npm run preview` 也已通过 Vite 中间件实现同样的代理，开发与线上行为一致。
+- 若填入的域名无法连通，会返回明确的「无法连接接口域名」提示，而非笼统的 CORS 报错。
+
 ## 注意事项
 
-1. **CORS**：后端接口需允许本管理后台域名的跨域请求（Access-Control-Allow-Origin），否则浏览器调用会被拦截。
-2. **HTTPS**：Cloudflare Pages 强制 HTTPS，若接口域名为 `http://`，请在后端启用 HTTPS 或将域名改为 `https://`。
-3. **登录即鉴权**：登录时用「域名 + Token」调用分类接口校验，校验通过才放行，因此 Token 即身份凭证。Token 仅保存在本浏览器 localStorage，不会上传到第三方。
+1. **无需 CORS**：得益于同源代理，后端接口不必配置 `Access-Control-Allow-Origin`。
+2. **HTTPS**：Cloudflare Pages 强制 HTTPS；填入的接口域名建议用 `https://`，代理会自动补全缺失的协议头。
+3. **登录即鉴权**：登录时用「域名 + Token」经代理调用分类接口校验，校验通过才放行，Token 即身份凭证。Token 仅保存在本浏览器 localStorage，不会上传到第三方。
 4. **多系统共用**：不同用户用各自的域名 + Token 登录即可访问各自系统，平台本身无需任何配置。
 
-## 进阶：使用 Pages Functions 代理（可选，提升安全性）
+## 进阶：进一步增强（可选）
 
-若希望 token 不暴露在前端，可在 `functions/` 下添加代理函数，由服务端携带 token 转发请求，前端只调用同源的 `/api/...`。本仓库当前为纯静态实现，可按需扩展。
+当前代理仍把 Token 经请求头发往本站函数（同源、HTTPS，第三方域名看不到）。若你希望对 Token 做更严格保护，
+可在 `functions/api-proxy/[...path].js` 中改为从 Pages 环境变量读取固定 Token，或增加签名校验——按需扩展即可。

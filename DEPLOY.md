@@ -96,10 +96,13 @@ npx wrangler pages deploy dist --project-name=cms-admin
 
 ## 注意事项（部署前务必确认）
 
-1. **后端接口要开 CORS**
-   你的后端 `/api/import/categories` 与 `/api/import/archive` 必须允许本后台域名的跨域请求（`Access-Control-Allow-Origin`）。否则浏览器会拦截调用。
+> 本后台已内置 **同源代理**（`functions/api-proxy/[...path].js`），浏览器只与本站点通信，
+> 由代理在服务端转发到你的接口域名——因此**后端无需开启 CORS**。
+
+1. **无需 CORS（已解决）**
+   得益于同源代理，后端 `/api/import/categories` 与 `/api/import/archive` 不必配置 `Access-Control-Allow-Origin`，不会再出现 `Failed to fetch` 跨域报错。
 2. **接口建议用 HTTPS**
-   Cloudflare Pages 强制 HTTPS，若你的接口是 `http://`，浏览器会因「混合内容」拦截。请为后端启用 HTTPS（域名填 `https://...`）。
+   Cloudflare Pages 强制 HTTPS；若你的接口是 `http://`，代理会自动补全为 `https://` 再转发，但建议后端本身启用 HTTPS（域名填 `https://...`）。
 3. **Token 即凭证**
    Token 只保存在你当前浏览器的 localStorage，不会上传到任何第三方；但也意味着本机可查看，请勿在公共电脑勾选「记住」类选项（当前版本登录即会话，退出即清除）。
 
@@ -107,7 +110,7 @@ npx wrangler pages deploy dist --project-name=cms-admin
 
 ## 重新部署 / 更新
 
-- **Git 方式**：`git commit` + `git push` 后自动触发新构建
+- **Git 方式**：`git commit` + `git push` 后自动触发新构建（Pages 会自动带上 `functions/` 目录的代理）
 - **上传方式**：重新 `npm run build` 后再次 `npx wrangler pages deploy dist`
 - **控制台方式**：项目页 → **部署** → **重试 / 重新部署**
 
@@ -119,5 +122,5 @@ npx wrangler pages deploy dist --project-name=cms-admin
 | --- | --- |
 | 页面空白 | 控制台 Network 看 `dist` 资源是否 404；确认输出目录是 `dist` |
 | 登录提示「校验失败」 | 域名是否带 `https://`、Token 是否正确、后端是否返回 `code:0` |
-| 接口调用被 CORS 拦截 | 后端未配置 `Access-Control-Allow-Origin`，联系后端加白名单 |
+| 提示「无法连接接口域名」 | 域名是否填错、后端服务是否可访问、是否被网络/防火墙拦截（不再是 CORS 问题） |
 | 接口混合内容被拦 | 后端域名必须是 `https://` |
