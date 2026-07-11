@@ -8,6 +8,15 @@ export interface Session {
   token: string;
 }
 
+// 规范化接口域名：自动补全 https:// 前缀、去掉结尾斜杠。
+// 用户登录时无需手动填写 http(s)://，系统默认按 https 访问。
+export function normalizeDomain(input: string): string {
+  let d = (input || '').trim();
+  if (!d) return '';
+  if (!/^https?:\/\//i.test(d)) d = 'https://' + d;
+  return d.replace(/\/+$/, '');
+}
+
 let current: Session | null = load();
 
 function load(): Session | null {
@@ -16,7 +25,7 @@ function load(): Session | null {
     if (!raw) return null;
     const obj = JSON.parse(raw) as Partial<Session>;
     if (obj && obj.domain && obj.token) {
-      return { domain: obj.domain.replace(/\/$/, ''), token: obj.token };
+      return { domain: normalizeDomain(obj.domain), token: obj.token };
     }
     return null;
   } catch {
@@ -29,7 +38,7 @@ export function getSession(): Session | null {
 }
 
 export function setSession(domain: string, token: string): void {
-  current = { domain: domain.replace(/\/$/, ''), token };
+  current = { domain: normalizeDomain(domain), token };
   try {
     localStorage.setItem(KEY, JSON.stringify(current));
   } catch {

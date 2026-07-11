@@ -1,4 +1,4 @@
-import { getSession } from './session';
+import { getSession, normalizeDomain } from './session';
 import type { CategoriesResponse, ImportResponse } from './types';
 
 // 所有接口都走同源代理 /api-proxy（由 Cloudflare Pages Functions 或本地 Vite 中间件转发）。
@@ -14,7 +14,7 @@ interface ProxyOpts {
 
 function proxyFetch(pathWithQuery: string, init: RequestInit, opts: ProxyOpts = {}): Promise<Response> {
   const s = getSession();
-  const domain = (opts.domain ?? s?.domain ?? '').replace(/\/$/, '');
+  const domain = normalizeDomain(opts.domain ?? s?.domain ?? '');
   const token = opts.token ?? s?.token ?? '';
   const headers = new Headers(init.headers);
   headers.set('x-target-domain', domain);
